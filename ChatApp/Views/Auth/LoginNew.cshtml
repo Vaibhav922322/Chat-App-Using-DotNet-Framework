@@ -1,0 +1,23 @@
+﻿
+@{
+    ViewBag.Title = "LoginNew";
+}
+<h2>Success</h2>
+<h2>
+    @User.Identity.Name
+</h2>
+
+@if (User.Identity.IsAuthenticated)
+{
+    <a href='@Url.Action(actionName:"Logout",controllerName:"Auth")'>
+        <input type='button' value='Logout' />
+    </a>
+}
+
+
+
+
+
+
+
+

@@ -1,0 +1,16 @@
+﻿
+@model List<ChatApp.Models.DisplayThings>
+<div>
+
+    <h2>Employees List</h2>
+    <ul>
+        @foreach (var user in Model)
+        {
+            <li>
+                <h1>@user.chat.chatId</h1>
+            </li>
+        }
+    </ul>
+
+
+</div>

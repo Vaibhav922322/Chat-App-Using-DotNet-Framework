@@ -1,0 +1,61 @@
+﻿@model ChatApp.Models.UserLoginModel
+@{
+    ViewBag.Title = "Login";
+}
+
+@if (User.Identity.IsAuthenticated)
+{
+    <h1>Already logged in </h1>
+    <h2>Choose operations, either go to home or logout</h2>
+
+    <a href='@Url.Action(actionName: "Home", controllerName: "Home")'>
+        <input type='button' value='Home' />
+    </a>
+
+    <a href='@Url.Action(actionName: "Logout", controllerName: "Auth")'>
+        <input type='button' value='Logout' />
+    </a>
+}
+
+else
+{
+    <h2>Login</h2>
+    using (Html.BeginForm(actionName: "Login", controllerName: "Auth", method: FormMethod.Post))
+    {
+        @Html.AntiForgeryToken()
+        
+        <div class="form-horizontal">
+            <h4>@ViewBag.error</h4>
+            <hr />
+            @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+            <div class="form-group">
+                @Html.LabelFor(model => model.email_Id, htmlAttributes: new { @class = "control-label col-md-2" })
+                <div class="col-md-10">
+                    @Html.TextBoxFor(model => model.email_Id, new { htmlAttributes = new { @class = "form-control" } })
+                    @Html.ValidationMessageFor(model => model.email_Id, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <div class="form-group">
+                @Html.LabelFor(model => model.password, htmlAttributes: new { @class = "control-label col-md-2" })
+                <div class="col-md-10">
+                    @Html.PasswordFor(model => model.password, new { htmlAttributes = new { @class = "form-control" } })
+                    @Html.ValidationMessageFor(model => model.password, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="col-md-offset-2 col-md-10">
+                    <input type="submit" value="Login" class="btnbtn-primary" />
+                </div>
+            </div>
+        </div>
+    }
+
+    <a href='@Url.Action(actionName:"Register",controllerName:"Auth")'>
+        <input type='button' value='Register' />
+    </a>
+}
+
+
+

@@ -1,0 +1,73 @@
+﻿@model ChatApp.Models.UserRegisterModel
+
+
+@{
+    ViewBag.Title = "Register";
+}
+
+
+@if (User.Identity.IsAuthenticated)
+{
+    <h1>Already logged in. Either logout first or go to home page</h1>
+
+    <a href='@Url.Action(actionName:"Home",controllerName:"Home")'>
+        <input type='button' value='Home' />
+    </a>
+
+    <a href='@Url.Action(actionName:"Logout",controllerName:"Auth")'>
+        <input type='button' value='Logout' />
+    </a>
+}
+
+else
+{
+
+    <h2>Register</h2>
+
+    using (Html.BeginForm(actionName: "Register", controllerName: "Auth", method: FormMethod.Post))
+    {
+        @Html.AntiForgeryToken()
+
+        <div class="form-horizontal">
+            <h4>@ViewBag.error</h4>
+            <hr />
+            @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+            <div class="form-group">
+                @Html.LabelFor(model => model.name, htmlAttributes: new { @class = "control-label col-md-2" })
+                <div class="col-md-10">
+                    @Html.TextBoxFor(model => model.name, new { htmlAttributes = new { @class = "form-control" } })
+                    @Html.ValidationMessageFor(model => model.name, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <div class="form-group">
+                @Html.LabelFor(model => model.email_Id, htmlAttributes: new { @class = "control-label col-md-2" })
+                <div class="col-md-10">
+                    @Html.TextBoxFor(model => model.email_Id, new { htmlAttributes = new { @class = "form-control" } })
+                    @Html.ValidationMessageFor(model => model.email_Id, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <div class="form-group">
+                @Html.LabelFor(model => model.password, htmlAttributes: new { @class = "control-label col-md-2" })
+                <div class="col-md-10">
+                    @Html.PasswordFor(model => model.password, new { htmlAttributes = new { @class = "form-control" } })
+                    @Html.ValidationMessageFor(model => model.password, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="col-md-offset-2 col-md-10">
+                    <input type="submit" value="Register" class="btnbtn-primary" />
+                </div>
+            </div>
+        </div>
+    }
+
+    <div>
+        @Html.ActionLink("Login", actionName: "Login", controllerName: "Auth")
+    </div>
+
+
+}
+

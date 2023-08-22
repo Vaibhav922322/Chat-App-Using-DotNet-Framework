@@ -1,0 +1,14 @@
+﻿
+@model List<ChatApp.Models.DisplayThings>
+
+
+<h2>Employees List</h2>
+<ul>
+    @foreach (var user in Model)
+    {
+        <li>
+            @Html.ActionLink(user.user.userName, "createChat", new { id = user.user.userId })
+        </li>
+    }
+</ul>
+

@@ -1,0 +1,33 @@
+﻿@model ChatApp.Models.DisplayThings
+
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>testChat</title>
+</head>
+<body>
+    <div>
+
+
+        <h2>Employees List</h2>
+        <ul>
+
+                <li>
+                        @Html.ActionLink(Model.user.userName, "testChat1", new { id = Model.user.userId })
+                    </li>
+                
+            </ul>
+
+
+
+
+
+        <!--
+            <button onclick="Html.Action(controllerName:"Auth", actionName: "Register",routeValues : new List<string> {"id", "id"})"></button>
+        -->
+    </div>
+</body>
+</html>

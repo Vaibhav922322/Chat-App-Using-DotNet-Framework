@@ -1,0 +1,389 @@
+﻿@{
+    ViewBag.Title = "Home Page";
+}
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <link href="~/Content/style.css" rel="stylesheet" />
+    <link href="~/Content/bootstrap.min.css" rel="stylesheet" type="text/css" />
+    @{
+        string loggedInUser = User.Identity.Name;
+    }
+
+
+</head>
+<body>
+
+    <nav class="nav-container">
+        <img src="~/Content/1.png" alt="icon" class="logo">
+        @if (User.Identity.IsAuthenticated)
+        {
+            <a href='@Url.Action(actionName: "Logout", controllerName: "Auth")'>
+                <input type='button' value='Logout' />
+            </a>
+        }
+    </nav>
+
+    <h2>Users</h2>
+    <div class="all-users">
+
+    </div>
+
+    <div class="align-items-start hstack ">
+        <div class="align-items-start vstack">
+            <h2>Chats</h2>
+
+            <div class="section2 messages-box flex-grow-0 pe-3 vstack gap-3">
+
+            </div>
+        </div>
+
+
+        <div class="section1">
+
+            <div class="chat-header">
+                <strong id="displayName"> <strong id="userIdofLoggedIn" data-razor-data="@loggedInUser"> </strong></strong>
+
+            </div>
+
+
+            <div class="chat-box vstack gap-4" id="scroll">
+
+
+            </div>
+
+
+            <div class="msg-input">
+                
+            </div>
+        </div>
+    </div>
+
+
+
+
+    <script type="module">
+        import { io } from "https://cdn.socket.io/4.4.1/socket.io.esm.min.js";
+
+        window.socket  = io("http://localhost:3000");
+    </script>
+
+
+    <script>
+
+
+        // Format the date using Intl.DateTimeFormat
+        const options = {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        };
+
+        var onlineUsers = [];
+        var l = [];
+        var chats = [];
+        var users = [];
+        const loggedInUserId = document.getElementById("userIdofLoggedIn").getAttribute("data-razor-data");
+        var currentChatId = "";
+        var currentReceiverId = "";
+     
+        async function getChats() {
+            $.ajax({
+                url: 'https://localhost:44363/Home/getUserChats',
+                type: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    chats = data
+                },
+                error: function () {
+                    alert("Error occurred while updating data.");
+                }
+            });
+        }
+
+        async function getUsers() {
+            $.ajax({
+                url: 'https://localhost:44363/Home/getUsersExcept',
+                type: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    users = data;
+                    
+                },
+                error: function () {
+                    alert("Error occurred while updating data.");
+                }
+            });
+        }
+
+        async function createList(arr, element_id, model) {
+            if (arr !== null || arr.length === 0) {
+                var listHtml = "";
+                if (model === 'user' && arr.user !== null) {
+                    arr.forEach(function (item) {
+                        listHtml += `<div class="single-user" onclick="createChat('${item.user.userId}')">
+                                    ${item.user.userName}
+                                    <span class=${onlineUsers?.some((user) => user?.userId === item.user.userId)?"user-online":""}></span>
+                             </div>`;
+                    });
+                    if (listHtml === "")
+                        document.getElementByClassName(element_id)[0].innerHTML = `<h3> no chats </h3>`;
+                    else
+                        document.getElementsByClassName(element_id)[0].innerHTML = listHtml;
+                }
+                else if (model === 'chat' && arr.chat !== null) {
+                    arr.forEach(function (item) {
+                        listHtml += `<div role="button" onclick ="getSelectedChatMessages('${item.chat.chatId}', '${item.chat.receiverId}','${item.chat.personName}')">
+                                    <div  class="user-card align-items-center p-2 justify-content-between hstack gap-3">
+                                        <div class = "d-flex">
+                                            <div class = "me-2" >
+                                                <img src="/Content/avtar.svg" height="35px">
+                                            </div>
+                                            <div class="text-content">
+                                                <div class="name">
+                                                    ${item.chat.personName}
+                                                </div>
+                                                <div class="text">
+                                                    jknjknjkgsf
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex flex-column align-items-end">
+                                            <div class="date">
+                                                07/28/2023
+                                            </div>
+                                            <div class="this-user-notifications">${unreadCount}
+                                            </div>
+                                                <span class=${onlineUsers?.some((user) => user?.userId === item.chat.receiverId) ? "user-online" : ""}>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>`
+                    });
+                    if (listHtml === "")
+                        document.getElementByClassName(element_id)[0].innerHTML = `<h3> no chats </h3>`;
+                    else
+                        document.getElementsByClassName(element_id)[0].innerHTML = listHtml;
+                }
+
+            }
+        }
+
+        async function createChat(userId) {
+
+            $.ajax({
+                url: `https://localhost:44363/Home/createChat/${userId}/`,
+                type: 'GET',
+                dataType: 'json',
+                success: async function (data) {
+                    getChats().then(createList(chats, 'chatDiv', 'chat')).then(updateData());
+                },
+                error: function () {
+                    alert("Error occurred while updating data.");
+                }
+            });
+        }
+
+        function displayMessages(messages) {
+            if (messages !== null || messages.length >= 0) {
+                if (messages.length === 0) {
+                    document.getElementsByClassName("chat-box")[0].innerHTML = `<div class="message align-self-center flex-grow-0 vstack">
+                    <span> No Messages</span>
+                </div>`;
+                }
+                else {
+                    var listHtml = "";
+                    messages.forEach(function (msg) {
+                        const timestamp = parseInt(msg.timestamp.match(/\d+/)[0]);
+                        // Convert timestamp to a Date object
+                        const date = new Date(timestamp);
+                        const formattedDate = new Intl.DateTimeFormat(['ban', 'id'], options).format(date);
+                        //console.log(formattedDate);  // Output: "14/08/2023 09:25 AM"
+
+                        listHtml += `<div class="message ${(loggedInUserId !== msg.senderId) ? "align-self-start" : "self align-self-end"}  flex-grow-0 vstack">
+                                <span> ${msg.text}</span>
+                                <span class="message-footer">${formattedDate}</span>
+                             </div>`;
+                    });
+                    document.getElementsByClassName("chat-box")[0].innerHTML = listHtml;
+                    unreadCount = 0;
+                    document.getElementsByClassName("this-user-notifications")[0].innerHTML = "";
+                    document.getElementsByClassName("this-user-notifications")[0].className = "";
+                }
+            }
+            var myDiv = document.getElementsByClassName("chat-box")[0]
+
+            // Scroll the div to the bottom
+            myDiv.scrollTop = myDiv.scrollHeight;
+        }
+        function delay(time) {
+            return new Promise(resolve => setTimeout(resolve, time));
+        }
+
+        async function getSelectedChatMessages(chatId, receiverId, receiverName) {
+            if (chatId === "") {
+                document.getElementById("displayName").innerHTML = "----";
+                document.getElementsByClassName("chat-box")[0].innerHTML = `
+            <div class="message align-self-center flex-grow-0 vstack">
+                    <span> No Conversations selected yet</span>
+                </div>
+        `;
+            }
+            else {
+                document.getElementById("displayName").innerHTML = receiverName;
+
+                currentChatId = chatId;
+                currentReceiverId = receiverId;
+                $.ajax({
+                    url: `https://localhost:44363/Home/getMessagesInChat/${chatId}`,
+                    type: 'GET',
+                    dataType: 'json',
+
+                    success: async function (response) {
+                        console.log("data in method : ", response);
+                        displayMessages(response);
+                        //getChats().then(createList(chats, 'chatDiv', 'chat')).then(updateData());
+                    },
+                    error: function () {
+                        alert("Error occurred while updating data.");
+                    }
+                });
+            }
+            if (currentChatId !== "") {
+                document.getElementsByClassName("msg-input")[0].innerHTML = `
+                    <div  id="send-msg">
+                        <input type="text" name="msgbox" id="msgInpbox" placeholder="Type Message Here">
+                        <button class="btn" onclick="sendMessage()">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-send-fill" viewBox="0 0 16 16">
+                                <path d="M15.964.686a.5.5 0 0 0-.65-.65L.767 5.855H.766l-.452.18a.5.5 0 0 0-.082.887l.41.26.001.002 4.995 3.178 3.178 4.995.002.002.26.41a.5.5 0 0 0 .886-.083l6-15Zm-1.833 1.89L6.637 10.07l-.215-.338a.5.5 0 0 0-.154-.154l-.338-.215 7.494-7.494 1.178-.471-.47 1.178Z" />
+                            </svg>
+                        </button>
+                    </div>`;
+            }
+        }
+
+        async function createMessage(txt, recieverName) {
+
+            console.log(txt);
+            if (txt !== "" || txt !== null) {
+                $.ajax({
+                    url: `https://localhost:44363/Home/createMessage/`,
+                    type: 'POST',
+                    dataType: 'json',
+                    data: {
+                        chatId: currentChatId,
+                        receiverId: currentReceiverId,
+                        text: txt
+                    },
+                    success: async function (response) {
+                        getSelectedChatMessages(currentChatId, currentReceiverId, recieverName);
+                    },
+                    error: function () {
+                        alert("Error occurred while updating data.");
+                    }
+                });
+            }
+        }
+
+        async function updateChatMessages(chatId) {
+            $.ajax({
+                url: `https://localhost:44363/Home/getMessagesInChat/${chatId}`,
+                type: 'GET',
+                dataType: 'json',
+
+                success: async function (response) {
+                    await delay(100);
+                    console.log("data in method : ", response);
+                    displayMessages(response);
+                },
+                error: function () {
+                    alert("Error occurred while updating data.");
+                }
+            });
+        }
+        
+
+        async function sendMessage() {
+            const txt = document.getElementById("msgInpbox").value;
+            const recieverName = document.getElementById("displayName").textContent;
+            console.log(recieverName);
+            if (txt !== null) {
+                createMessage(txt, recieverName);
+                await delay(100);
+            }
+            document.getElementById("msgInpbox").value = "";
+            if (socket !== null) {
+                socket.emit("sendMessage", [currentReceiverId]);
+            }
+        }
+
+    </script>
+
+    <script type="module">
+
+        if (socket !== null) {
+            socket.emit("newOnlineUser", loggedInUserId);
+        }
+        socket.on("getOnlineUsers", (res) => {
+            onlineUsers = res;
+            createList(users, 'all-users', 'user');
+            createList(chats, 'messages-box', 'chat');
+        });
+        socket.on("refreshMessages", async (recId) => {
+            if (recId == currentReceiverId)
+                await updateChatMessages(currentChatId);
+        });
+
+        function delay(time) {
+            return new Promise(resolve => setTimeout(resolve, time));
+        }
+        async function init() {
+            
+            await delay(100);
+            getUsers();
+
+            await delay(10);
+            getChats();
+
+            await delay(10);
+            getSelectedChatMessages("", "", "");
+
+            await delay(10);
+            updateData();
+
+            await delay(10);
+            console.log("done all inits")
+        }
+        async function updateData() {
+            $.ajax({
+                url: 'https://localhost:44363/Home/upd',
+                type: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    createList(users, 'all-users', 'user');
+                    createList(chats, 'messages-box', 'chat');
+
+                },
+                error: function () {
+                    alert("Error occurred while updating data.");
+                }
+            });
+        }
+
+        
+
+        init();
+        
+   </script>
+
+
+</body>
